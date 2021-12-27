@@ -36,6 +36,10 @@ class Testograph():
                 self.tests_dict[name_of_test]['properties'] = []
             elif item.startswith('=='): # если это картинка теста
                 self.tests_dict[name_of_test]['picture'] = item[2:]
+            elif item.startswith('!'):
+                self.tests_dict[name_of_test]['preview_txt'] = item[1:]
+            elif item.startswith('?'):
+                self.tests_dict[name_of_test]['preview_pic'] = item[1:]
             else: # если это внутренности теста
                 item = item.split(' : ')
                 self.properties = []
@@ -77,6 +81,7 @@ class Testograph():
             else: # мы принимаем (и хотим) кнопки без картинок
                 btn = ttk.Button(frame, text=item, command=partial(self.preview_show, item), width=80)
             btn.pack()
+        ttk.Button(self.main, text="Создать новый тест", command=partial(self.new_test)).pack()
     def new_window(self, toplevel=False):
         if toplevel:
             w = tk.Toplevel()
@@ -113,9 +118,9 @@ class Testograph():
         data = self.prop[pos] # мы берём внутренности вопроса
         if field != None:
             if action == '+':
-                self.answers[self.prop[pos - 1]] = field.get()
+                self.answers[self.prop[pos - 1]] = (field.get()).strip()
             elif action == '-':
-                self.answers[self.prop[pos + 1]] = field.get()
+                self.answers[self.prop[pos + 1]] = (field.get()).strip()
         if pos == 0:
             self.preview.destroy()
         else:
@@ -154,8 +159,7 @@ class Testograph():
                 # главное изменение -- Checkbutton
         elif data[0] == 'ENTRY':
             self.entry_answer = tk.StringVar()
-            entry_field = ttk.Entry(self.cw, textvariable=self.entry_answer, width=50)
-            entry_field.pack()
+            ttk.Entry(self.cw, textvariable=self.entry_answer, width=50).pack()
         else:
             raise ValueError('Unsupported question type')
         if data != self.prop[-1]:
@@ -266,6 +270,34 @@ class Testograph():
                 # пример: 1. Какая первая буква в алфавите?
                 # заметка: position начинается с 0, так что нужно прибавить 1
         ttk.Label(results, text=description, font=18).pack(side='top')
+    def new_test(self):
+        self.title = self.new_window(toplevel=True)
+        ttk.Label(self.title, text="Назовите свой тест", font=18).pack()
+        self.title_a = tk.StringVar()
+        ttk.Entry(self.title, textvariable=self.title_a, width=50).pack()
+        ttk.Label(self.title, text="Текст превью", font=18).pack()
+        self.preview_text = tk.StringVar()
+        ttk.Entry(self.title, textvariable=self.preview_text, width=50).pack()
+        ttk.Label(self.title, text="Ссылка на картинку в главном меню", font=18).pack()
+        self.main_img_link = tk.StringVar()
+        ttk.Entry(self.title, textvariable=self.main_img_link, font=18).pack()
+        ttk.Label(self.title, text="Ссылка на картинку в превью", font=18).pack()
+        self.preview_img_link = tk.StringVar()
+        ttk.Entry(self.title, textvariable=self.preview_img_link, width=50).pack()
+        ttk.Button(self.title, text="Далее", command=partial(self.create_progress, 0))
+    def create_progress(self, pos):
+        if pos == 0:
+            self.created_test = {self.title_a: {
+                'picture': self.main_img_link,
+                'properties': [],
+                'preview_txt': self.preview_text,
+                'preview_pic': self.preview_img_link
+            }}
+            self.title.destroy()
+        else:
+            self.question.destroy()    
+        self.question = self.new_window(toplevel=True)
+
     def start(self):
         self.main.mainloop()
 Testograph().start()
