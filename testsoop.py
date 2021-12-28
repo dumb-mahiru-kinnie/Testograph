@@ -280,24 +280,56 @@ class Testograph():
         ttk.Entry(self.title, textvariable=self.preview_text, width=50).pack()
         ttk.Label(self.title, text="Ссылка на картинку в главном меню", font=18).pack()
         self.main_img_link = tk.StringVar()
-        ttk.Entry(self.title, textvariable=self.main_img_link, font=18).pack()
+        ttk.Entry(self.title, textvariable=self.main_img_link, font=18, width=50).pack()
         ttk.Label(self.title, text="Ссылка на картинку в превью", font=18).pack()
         self.preview_img_link = tk.StringVar()
         ttk.Entry(self.title, textvariable=self.preview_img_link, width=50).pack()
-        ttk.Button(self.title, text="Далее", command=partial(self.create_progress, 0))
+        ttk.Button(self.title, text="Далее", command=partial(self.create_progress, 0)).pack()
     def create_progress(self, pos):
         if pos == 0:
-            self.created_test = {self.title_a: {
-                'picture': self.main_img_link,
+            self.created_test = {self.title_a.get().strip(): {
+                'picture': self.main_img_link.get().strip(),
                 'properties': [],
-                'preview_txt': self.preview_text,
-                'preview_pic': self.preview_img_link
+                'preview_txt': self.preview_text.get().strip(),
+                'preview_pic': self.preview_img_link.get().strip()
             }}
             self.title.destroy()
         else:
-            self.question.destroy()    
+            self.question.destroy()
         self.question = self.new_window(toplevel=True)
 
+        ttk.Label(self.question, text="Выберите тип вопроса", font=18).pack()
+        question_type = tk.StringVar()
+        for each_type in ["RADIO", "CHECK", "ENTRY"]:
+            ttk.Radiobutton(self.question, text=each_type, variable=question_type, value=each_type, command=partial(self.reset, each_type)).pack()
+
+        question_txt = tk.StringVar()
+        ttk.Label(self.question, text="Текст вопроса", font=18).pack()
+        ttk.Entry(self.question, textvariable=question_txt, width=50).pack()
+        
+        canvas = tk.Canvas(self.question, height=300, width=500, background='#e6e6e6')
+        self.frame = tk.Frame(canvas, background='#e6e6e6')
+        scroll = tk.Scrollbar(self.question, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill='y')
+        canvas.pack()
+        canvas.create_window((0,0), window=self.frame)
+        self.frame.bind("<Configure>", lambda event: canvas.configure(scrollregion=canvas.bbox("all")))
+    def reset(self, type):
+        for child in self.frame.winfo_children():
+            child.destroy()
+        ttk.Button(self.frame, text="Добавить вариант ответа", command=partial(self.add_variant, type)).pack()
+    def add_variant(self, type):
+        if type == "RADIO":
+            variant = tk.StringVar()
+            right_answer = tk.StringVar()
+            ttk.Radiobutton(self.frame, 
+                text=ttk.Entry(self.frame, textvariable=variant, width=20).pack(), 
+                textvariable=right_answer, value=variant.get(), command=(lambda: print(right_answer.get()))
+            ).pack()
+            # ЧТО ЭТО -- это поле внутри радиокнопки, также называемое смертью.
+            # TODO: пофиксить выбирание всех кнопок за раз
+            # это, наверно, легко сделать, но мои мозги слишком прожаренные для этого. спокойной ночи.
     def start(self):
         self.main.mainloop()
 Testograph().start()
